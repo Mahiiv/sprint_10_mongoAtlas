@@ -3,10 +3,13 @@ require("node:dns").setServers(["8.8.8.8", "8.8.4.4"]);
 
 require("dotenv").config();
 var express = require("express");
+var cors = require('cors');
 var mongoose = require("mongoose");
 var Post = require("./models/Post");
 
 var app = express();
+// letting the frontend talk to this server
+app.use(cors());
 
 // so i can read req.body
 app.use(express.json());
@@ -54,7 +57,21 @@ app.post("/posts", function (req, res) {
 app.delete("/posts/:id", function (req, res) {
   Post.findByIdAndDelete(req.params.id)
     .then(function (deletedPost) {
-      // if nothing found with that id
+      
+        // tells the backend to delete one post, id says which one
+  function deletePost(id) {
+    fetch("http://localhost:5000/posts/" + id, {
+      method: "DELETE",
+    }).then(function (res) {
+      console.log(res.status); // checking if it worked
+      // keeping every post except the one I deleted
+      setPosts(
+        posts.filter(function (post) {
+          return post._id !== id;
+        })
+      );
+    });
+  }
       if (!deletedPost) {
         return res.status(404).json({ message: "Post not found" });
       }
